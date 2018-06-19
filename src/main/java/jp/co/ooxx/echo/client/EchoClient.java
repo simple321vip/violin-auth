@@ -1,7 +1,6 @@
-package jp.co.ooxx.netty.client;
+package jp.co.ooxx.echo.client;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;

@@ -1,4 +1,4 @@
-package jp.co.ooxx.netty.server;
+package jp.co.ooxx.echo.server;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
