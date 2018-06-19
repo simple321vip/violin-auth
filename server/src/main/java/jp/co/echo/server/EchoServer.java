@@ -1,4 +1,4 @@
-package jp.co.ooxx.echo.server;
+package jp.co.echo.server;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
