@@ -33,6 +33,7 @@ public class EchoClient {
     }
 
     private void start() throws InterruptedException {
+        System.out.println("Client is starting...");
         EventLoopGroup group = new NioEventLoopGroup();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(group).

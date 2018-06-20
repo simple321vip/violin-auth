@@ -19,6 +19,8 @@ public class EchoServer {
 
     public static void main(String[] args) throws InterruptedException {
         if (args.length != 1) {
+
+
             System.err.println("Usage: " + EchoServer.class.getSimpleName() + " ");
             return;
         }
@@ -27,13 +29,14 @@ public class EchoServer {
     }
 
     private void start() throws InterruptedException {
+        System.out.println("Server is starting...");
         final EchoServerHandler serverHandler = new EchoServerHandler();
         EventLoopGroup group = new NioEventLoopGroup();
         try {
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(group).
                     channel(NioServerSocketChannel.class).
-                    localAddress(new InetSocketAddress(10000)).childHandler(new ChannelInitializer() {
+                    localAddress(new InetSocketAddress(port)).childHandler(new ChannelInitializer() {
                 protected void initChannel(Channel channel) throws Exception {
                     channel.pipeline().addLast(serverHandler);
                 }
