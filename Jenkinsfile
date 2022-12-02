@@ -77,9 +77,9 @@ spec:
     serviceAccount: 'jenkins-admin'
 ) {
   node(label) {
-    def violin_book_repo = checkout([
+    def violin_common_repo = checkout([
       $class: 'GitSCM',
-      branches: [[name: "*/dev"]],
+      branches: [[name: "*/master"]],
       doGenerateSubmoduleConfigurations: false,
       extensions:  [[$class: 'CloneOption', noTags: false, reference: '', shallow: true, timeout: 1000]]+[[$class: 'CheckoutOption', timeout: 1000]],
       submoduleCfg: [],
