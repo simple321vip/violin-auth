@@ -1,4 +1,4 @@
-package cn.violin.home.auth.io;
+package cn.violin.auth.io;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

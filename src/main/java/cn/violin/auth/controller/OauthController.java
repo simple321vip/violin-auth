@@ -1,12 +1,12 @@
-package cn.violin.home.auth.controller;
+package cn.violin.auth.controller;
 
-import cn.violin.home.auth.io.RegisterIn;
-import cn.violin.home.auth.service.TenantService;
-import cn.violin.home.auth.vo.UserInfoVo;
-import cn.violin.home.common.annotation.PassToken;
-import cn.violin.home.common.config.BaiduConf;
-import cn.violin.home.common.entity.Tenant;
-import cn.violin.home.common.utils.JedisUtils;
+import cn.violin.auth.service.TenantService;
+import cn.violin.auth.io.RegisterIn;
+import cn.violin.auth.vo.UserInfoVo;
+import cn.violin.common.annotation.PassToken;
+import cn.violin.common.config.BaiduConf;
+import cn.violin.common.entity.Tenant;
+import cn.violin.common.utils.JedisUtils;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;

@@ -1,9 +1,9 @@
-package cn.violin.home.auth.service;
+package cn.violin.auth.service;
 
-import cn.violin.home.auth.dao.AuthMasterRepo;
-import cn.violin.home.common.entity.Tenant;
-import cn.violin.home.auth.io.RegisterIn;
-import cn.violin.home.common.utils.JedisUtils;
+import cn.violin.auth.dao.AuthMasterRepo;
+import cn.violin.common.entity.Tenant;
+import cn.violin.auth.io.RegisterIn;
+import cn.violin.common.utils.JedisUtils;
 import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;

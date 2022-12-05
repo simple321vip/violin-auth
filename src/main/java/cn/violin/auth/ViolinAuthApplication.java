@@ -1,4 +1,4 @@
-package cn.violin.home.auth;
+package cn.violin.auth;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

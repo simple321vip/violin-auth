@@ -1,4 +1,4 @@
-package cn.violin.home.auth.entity;
+package cn.violin.auth.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

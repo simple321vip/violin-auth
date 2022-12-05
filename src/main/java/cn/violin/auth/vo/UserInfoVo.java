@@ -1,4 +1,4 @@
-package cn.violin.home.auth.vo;
+package cn.violin.auth.vo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
