@@ -7,7 +7,7 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan(basePackages = {"cn.violin.home"})
+@ComponentScan(basePackages = {"cn.violin"})
 public class ViolinAuthApplication extends SpringBootServletInitializer {
 
 	public static void main(String[] args) {
