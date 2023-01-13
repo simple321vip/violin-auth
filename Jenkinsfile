@@ -110,27 +110,28 @@ spec:
         ]]
       ])
 
-    def imageTag = "v1.02"
+    def imageTag
+    stage('obtain release tag') {
+      imageTag = sh returnStdout: true ,script: "git tag --sort=-taggerdate | head -n 1"
+      imageTag = imageTag.trim()
+    }
+
+    stage('compile') {
+      container('maven') {
+        sh 'mvn clean package'
+      }
+    }
+
     def registryUrl = "ccr.ccs.tencentyun.com"
     def imageEndpoint = "violin/violin-auth"
     def image = "${registryUrl}/${imageEndpoint}:${imageTag}"
 
-    stage('单元测试') {
-      echo "测试阶段"
-    }
-    stage('代码编译打包') {
-      container('maven') {
-        echo "代码编译打包阶段"
-        sh 'mvn clean package'
-      }
-    }
-    stage('镜像构建') {
+    stage('build image') {
       withCredentials([[$class: 'UsernamePasswordMultiBinding',
         credentialsId: '8eb5126b-6a2f-4644-add0-bc2a669e663d',
         usernameVariable: 'DOCKER_USER',
         passwordVariable: 'DOCKER_PASSWORD']]) {
           container('docker') {
-            echo "3. 构建 Docker 镜像阶段"
             sh """
               docker login ${registryUrl} --username=${DOCKER_USER} -p ${DOCKER_PASSWORD}
               docker build -t ${image} .
@@ -138,6 +139,40 @@ spec:
               """
           }
         }
+    }
+
+    def violin_cicd_repo = checkout([
+      $class: 'GitSCM',
+      branches: [[name: "*/master"]],
+      doGenerateSubmoduleConfigurations: false,
+      extensions:  [[$class: 'CloneOption', noTags: false, reference: '', shallow: true, timeout: 1000]]+[[$class: 'CheckoutOption', timeout: 1000]],
+      submoduleCfg: [],
+      userRemoteConfigs: [[
+        credentialsId: '2448e943-479f-4796-b5a0-fd3bf22a5d30',
+        url: 'https://gitee.com/guan-xiangwei/violin-cicd.git'
+        ]]
+      ])
+
+    stage('update k8s deployment') {
+      script{
+        wrap([$class: 'BuildUser']) {
+          withCredentials([usernamePassword(
+              credentialsId: '2448e943-479f-4796-b5a0-fd3bf22a5d30',
+              usernameVariable: 'GIT_USERNAME',
+              passwordVariable: 'GIT_PASSWORD'
+          )]) {
+            sh "sed -i -e s/violin-auth:.*/violin-auth:${imageTag}/g ./prod/violin-auth-deployment-prod.yaml"
+            sh """
+                git config --global user.email "${env.BUILD_USER_EMAIL}"
+                git config --global user.name "${env.BUILD_USER_ID}"
+                git config --local credential.helper "!p() { echo username=\$GIT_USERNAME; echo password=\$GIT_PASSWORD;}; p"
+                git add ./prod/violin-auth-deployment-prod.yaml
+            """
+            sh "git commit -m 'update tag ${imageTag}'"
+            sh "git push -u origin HEAD:master"
+          }
+        }
+      }
     }
   }
 }

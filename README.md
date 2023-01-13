@@ -12,7 +12,7 @@ we use kubernetes to deployment
 ### about security
 
 > baidu cloud oauth -> token -> redis + token
-> redis as a kubernetes service opened only for violin-book application that to save token as a cache one day. 
+> redis as a kubernetes service opened only for violin-auth application that to save token as a cache one day. 
 
 ### server
 
