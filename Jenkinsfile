@@ -130,8 +130,7 @@ spec:
 
     def imageTag
     stage('obtain release tag') {
-      imageTag = sh returnStdout: true ,script: "git tag --sort=-creatordate
-       | head -n 1"
+      imageTag = sh returnStdout: true, script: "git tag --sort=-creatordate | head -n 1"
       imageTag = imageTag.trim()
     }
 
