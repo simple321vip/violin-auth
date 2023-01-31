@@ -79,6 +79,24 @@ spec:
 
   node(label) {
 
+    def violin_parent_repo = checkout([
+      $class: 'GitSCM',
+      branches: [[name: "*/master"]],
+      doGenerateSubmoduleConfigurations: false,
+      extensions:  [[$class: 'CloneOption', noTags: false, reference: '', shallow: true, timeout: 1000]]+[[$class: 'CheckoutOption', timeout: 1000]],
+      submoduleCfg: [],
+      userRemoteConfigs: [[
+        credentialsId: '2448e943-479f-4796-b5a0-fd3bf22a5d30',
+        url: 'https://gitee.com/guan-xiangwei/violin-parent.git'
+        ]]
+      ])
+
+    stage('violin-parent install') {
+      container('maven') {
+        sh 'mvn clean install'
+      }
+    }
+
     def violin_common_repo = checkout([
       $class: 'GitSCM',
       branches: [[name: "*/master"]],
@@ -112,7 +130,8 @@ spec:
 
     def imageTag
     stage('obtain release tag') {
-      imageTag = sh returnStdout: true ,script: "git tag --sort=-taggerdate | head -n 1"
+      imageTag = sh returnStdout: true ,script: "git tag --sort=-creatordate
+       | head -n 1"
       imageTag = imageTag.trim()
     }
 
@@ -161,13 +180,14 @@ spec:
               usernameVariable: 'GIT_USERNAME',
               passwordVariable: 'GIT_PASSWORD'
           )]) {
-            sh "sed -i -e s/violin-auth:.*/violin-auth:${imageTag}/g ./prod/violin-auth-deployment-prod.yaml"
             sh """
                 git config --global user.email "${env.BUILD_USER_EMAIL}"
                 git config --global user.name "${env.BUILD_USER_ID}"
                 git config --local credential.helper "!p() { echo username=\$GIT_USERNAME; echo password=\$GIT_PASSWORD;}; p"
-                git add ./prod/violin-auth-deployment-prod.yaml
+                
             """
+            sh "sed -i -e s/violin-auth:.*/violin-auth:${imageTag}/g ./prod/violin-auth-deployment-prod.yaml"
+            sh "git add ./prod/violin-auth-deployment-prod.yaml"
             sh "git commit -m 'update tag ${imageTag}'"
             sh "git push -u origin HEAD:master"
           }
