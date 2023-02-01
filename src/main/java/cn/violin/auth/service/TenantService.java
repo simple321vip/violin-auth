@@ -57,6 +57,21 @@ public class TenantService {
     }
 
     /**
+     * query token from t_tenant
+     * @param token token
+     * @return the result of query result
+     */
+    public Tenant getTenantFromTTenant(String token) {
+
+        String tenantId = "3272499474";
+        Criteria criteria = Criteria.where("tenantId").is(tenantId);
+
+        Query query = Query.query(criteria);
+
+        return mongoTemplate.findOne(query, Tenant.class);
+    }
+
+    /**
      * use token to select tenant information from the third party of baidu
      * @param token token
      * @return the tenant information
@@ -81,21 +96,6 @@ public class TenantService {
         } else {
             return null;
         }
-    }
-
-    /**
-     * query token from t_tenant
-     * @param token token
-     * @return the result of query result
-     */
-    public Tenant getTenantFromTTenant(String token) {
-
-        String tenantId = "3272499474";
-        Criteria criteria = Criteria.where("tenantId").is(tenantId);
-
-        Query query = Query.query(criteria);
-
-        return mongoTemplate.findOne(query, Tenant.class);
     }
 
     /**
