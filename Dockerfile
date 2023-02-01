@@ -4,4 +4,6 @@ RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 RUN echo 'Asia/Shanghai' >/etc/timezone
 
-ENTRYPOINT ["java","-jar","target/violin-auth-1.0.0.jar"]
+ADD target/violin-auth-1.0.0.jar /
+
+ENTRYPOINT ["java", "-jar", "/violin-auth-1.0.0.jar"]
