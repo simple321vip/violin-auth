@@ -129,9 +129,12 @@ spec:
       ])
 
     def imageTag
+    def localDateTime
     stage('obtain release tag') {
       imageTag = sh returnStdout: true, script: "git tag --sort=-creatordate | head -n 1"
       imageTag = imageTag.trim()
+      localDateTime = sh returnStdout: true, script: "echo `date +%s`"
+      localDateTime = localDateTime.trim()
     }
 
     stage('compile') {
@@ -185,6 +188,7 @@ spec:
                 git config --local credential.helper "!p() { echo username=\$GIT_USERNAME; echo password=\$GIT_PASSWORD;}; p"
                 
             """
+            sh "sed -i -e s/tagUpdateTime:.*/tagUpdateTime:' '${localDateTime}/g ./prod/violin-auth-deployment-prod.yaml"
             sh "sed -i -e s/violin-auth:.*/violin-auth:${imageTag}/g ./prod/violin-auth-deployment-prod.yaml"
             sh "git add ./prod/violin-auth-deployment-prod.yaml"
             sh "git commit -m 'update tag ${imageTag}'"
