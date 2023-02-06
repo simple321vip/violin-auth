@@ -54,14 +54,13 @@ public class OauthController {
 
     @GetMapping("/authorize/baidu")
     @PassToken
-    public String qrAuthorize(@RequestParam(value = "code") String code, RedirectAttributes attributes) throws IOException {
+    public String qrAuthorize(@RequestParam(value = "code") String code, RedirectAttributes attributes)
+        throws IOException {
         StringBuilder authorizeUrl = new StringBuilder();
-        authorizeUrl.append(BaiduConf.getAccessToken())
-                .append("?").append("grant_type=authorization_code")
-                .append("&").append("code=" + code)
-                .append("&").append("client_id=" + BaiduConf.getAppKey())
-                .append("&").append("client_secret=").append(BaiduConf.getSecretKey())
-                .append("&").append("redirect_uri=").append(BaiduConf.getRedirectUri());
+        authorizeUrl.append(BaiduConf.getAccessToken()).append("?").append("grant_type=authorization_code").append("&")
+            .append("code=" + code).append("&").append("client_id=" + BaiduConf.getAppKey()).append("&")
+            .append("client_secret=").append(BaiduConf.getSecretKey()).append("&").append("redirect_uri=")
+            .append(BaiduConf.getRedirectUri());
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpGet httpGetToken = new HttpGet(authorizeUrl.toString());
         CloseableHttpResponse response = httpClient.execute(httpGetToken);
@@ -72,21 +71,33 @@ public class OauthController {
             String accessToken = object.getString("access_token");
 
             log.info(accessToken);
+            // 利用 accessToken 从 百度认证服务器 获取 百度用户信息
             Tenant tenant = tenantService.getTenant(accessToken);
             log.info(tenant.toString());
 
+            // 判断 百度用户信息是否存在于数据库， 如果存在则则进行token的设定或者更新，如果不存在则跳转到用户注册页面
             Optional<Tenant> optional = tenantService.check(tenant);
 
             attributes.addAttribute("tenantId", tenant.getTenantId());
             attributes.addAttribute("account", tenant.getAccount());
-            attributes.addAttribute("token", accessToken);
 
+
+            // 百度用户信息存在于数据库
             if (optional.isPresent()) {
-                redis.set(optional.get().getTenantId(), accessToken, 1, TimeUnit.DAYS);
+
+                // 用户处于登陆状态, 将用户登陆状态下的token返回给浏览器端
+                if (redis.get(optional.get().getTenantId()).isPresent()) {
+                    accessToken = redis.get(optional.get().getTenantId()).get();
+
+                    // 用户没有处于登陆状态, 将刚获取的accessToken返回给浏览器端，并设置过期时间。
+                } else {
+                    redis.set(optional.get().getTenantId(), accessToken, 1, TimeUnit.DAYS);
+                }
+                attributes.addAttribute("token", accessToken);
                 return "redirect:" + REDIRECT_IP + "home/";
-            } else {
-                return "redirect:" + REDIRECT_IP + "register";
             }
+            attributes.addAttribute("token", accessToken);
+            return "redirect:" + REDIRECT_IP + "register";
         }
         return "redirect:" + REDIRECT_IP + "sorryPage";
     }
@@ -109,13 +120,9 @@ public class OauthController {
 
         Tenant tenant = tenantService.getTenantFromTTenant(token);
 
-        UserInfoVo build = UserInfoVo.builder()
-                .id(tenant.getTenantId())
-                .account(tenant.getAccount())
-                .baiduName(tenant.getAccount())
-                .netdiskName(tenant.getStorageAccount())
-                .avatarUrl(tenant.getAvatarUrl())
-                .build();
+        UserInfoVo build =
+            UserInfoVo.builder().id(tenant.getTenantId()).account(tenant.getAccount()).baiduName(tenant.getAccount())
+                .netdiskName(tenant.getStorageAccount()).avatarUrl(tenant.getAvatarUrl()).build();
         return new ResponseEntity<>(build, HttpStatus.OK);
     }
 
