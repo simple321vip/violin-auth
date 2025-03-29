@@ -6,34 +6,28 @@
     <parent>
         <groupId>cn.violin</groupId>
         <artifactId>violin-parent</artifactId>
-        <version>1.0.0</version>
+        <version>1.2</version>
     </parent>
 
     <artifactId>violin-auth</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.0</version>
+    <version>1.2</version>
 
     <dependencies>
         <dependency>
             <groupId>cn.violin</groupId>
             <artifactId>violin-common</artifactId>
-            <version>1.0.0</version>
+            <version>1.2</version>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-mongodb</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-logging</artifactId>
         </dependency>
 
         <dependency>
@@ -52,9 +46,10 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- PostgreSQL 驱动 -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>

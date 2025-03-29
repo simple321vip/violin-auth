@@ -1,2 +1,1 @@
-SELECT * FROM auth_master;
-INSERT INTO auth_master (phone_number) VALUES('13332247026');
+INSERT INTO CUSTOMER (phone_number) VALUES ('13332247026') ON CONFLICT (phone_number) DO NOTHING; -- 冲突时不做任何操作

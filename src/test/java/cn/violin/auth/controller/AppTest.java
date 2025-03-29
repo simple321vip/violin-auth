@@ -1,4 +1,4 @@
-package org.example;
+package cn.violin.auth.controller;
 
 import static org.junit.Assert.assertTrue;
 

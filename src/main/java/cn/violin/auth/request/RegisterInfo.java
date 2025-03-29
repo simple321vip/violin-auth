@@ -1,4 +1,4 @@
-package cn.violin.auth.io;
+package cn.violin.auth.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -12,7 +12,7 @@ import javax.validation.constraints.NotNull;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterIn {
+public class RegisterInfo {
 
     @JsonProperty("phone_number")
     @NotNull

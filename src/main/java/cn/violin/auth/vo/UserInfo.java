@@ -8,7 +8,7 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserInfoVo {
+public class UserInfo {
 
     @JsonProperty("id")
     private String id;

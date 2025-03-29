@@ -1,97 +1,107 @@
 package cn.violin.auth.service;
 
-import cn.violin.auth.dao.AuthMasterRepo;
-import cn.violin.common.entity.Tenant;
-import cn.violin.auth.io.RegisterIn;
+import cn.violin.auth.dao.CustomerRepo;
+import cn.violin.auth.dao.TenantRepo;
+import cn.violin.auth.entity.Tenant;
+import cn.violin.auth.request.RegisterInfo;
+import cn.violin.auth.vo.UserInfo;
 import cn.violin.common.utils.JedisUtils;
 import com.alibaba.fastjson.JSONObject;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 /**
  * nothing
  */
 @Service
+@AllArgsConstructor
 @Slf4j
 public class TenantService {
 
     @Autowired
-    private MongoTemplate mongoTemplate;
+    private CustomerRepo customerRepo;
 
     @Autowired
-    private AuthMasterRepo authMasterRepo;
+    private TenantRepo tenantRepo;
 
     @Autowired
     private JedisUtils redis;
 
     /**
-     * this method is to query the third party login user is legal and exists. to return a Optional object to controller
+     * this method is to query the third party login user is legal and exists. to return an Optional object to controller
      * that will set redirect uri to front side.
-     * 
+     *
      * @param tenant the third party BAIDUで登録するユーザー
      * @return Optional
      */
     public Optional<Tenant> check(Tenant tenant) {
+        log.info("tenantId:{}", tenant.getTenantId());
+        var tenantEntity = tenantRepo.findById(tenant.getTenantId());
+        log.info("tenantEntity:{}", tenantEntity);
 
-        Criteria criteria = Criteria.where("tenantId").is(tenant.getTenantId());
-        Query query = Query.query(criteria);
-
-        log.info("tenantId:" + tenant.getTenantId());
-        Tenant tenantEntity = mongoTemplate.findOne(query, Tenant.class);
-        log.info("tenantEntity:" + tenantEntity);
-
-        return Optional.ofNullable(tenantEntity);
+        return tenantEntity;
     }
 
     /**
      * query token from t_tenant
-     * 
+     *
      * @param token token
      * @return the result of query result
      */
-    public Tenant getTenantFromTTenant(String token) {
-
-        String tenantId = "3272499474";
-        Criteria criteria = Criteria.where("tenantId").is(tenantId);
-
-        Query query = Query.query(criteria);
-
-        return mongoTemplate.findOne(query, Tenant.class);
+    public UserInfo getUserInfo(String token) {
+        // "3272499474"
+        var tenantId = redis.get(token).orElse(null);
+        if (Objects.isNull(tenantId)) {
+            return null;
+        }
+        var tenantOptional = tenantRepo.findById(tenantId);
+        if (tenantOptional.isPresent()) {
+            var tenant = tenantOptional.get();
+            return UserInfo.builder()
+                    .id(tenant.getTenantId())
+                    .account(tenant.getAccount())
+                    .baiduName(tenant.getAccount())
+                    .netdiskName(tenant.getStorageAccount())
+                    .avatarUrl(tenant.getAvatarUrl())
+                    .build();
+        }
+        return null;
     }
 
     /**
      * use token to select tenant information from the third party of baidu
-     * 
+     *
      * @param token token
      * @return the tenant information
      */
     public Tenant getTenant(String token) throws IOException {
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        String uInfoUrl = "https://pan.baidu.com/rest/2.0/xpan/nas?method=uinfo&access_token=" + token;
-        HttpGet httpGetUInfo = new HttpGet(uInfoUrl);
-        CloseableHttpResponse response = httpClient.execute(httpGetUInfo);
-        if (response.getStatusLine().getStatusCode() == 200) {
-            HttpEntity uInfoEntity = response.getEntity();
-            JSONObject uInfoObject = JSONObject.parseObject(EntityUtils.toString(uInfoEntity));
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            String uInfoUrl = "https://pan.baidu.com/rest/2.0/xpan/nas?method=uinfo&access_token=" + token;
+            HttpGet httpGetUInfo = new HttpGet(uInfoUrl);
+            var response = httpClient.execute(httpGetUInfo);
+            if (response.getStatusLine().getStatusCode() == 200) {
+                HttpEntity httpEntity = response.getEntity();
+                var parsedObject = JSONObject.parseObject(EntityUtils.toString(httpEntity));
 
-            Tenant tenant = Tenant.builder().tenantId(uInfoObject.getString("uk"))
-                .account(uInfoObject.getString("baidu_name")).storageAccount(uInfoObject.getString("netdisk_name"))
-                .avatarUrl(uInfoObject.getString("avatar_url")).build();
-            return tenant;
-        } else {
+                return Tenant.builder()
+                        .tenantId(parsedObject.getString("uk"))
+                        .account(parsedObject.getString("baidu_name"))
+                        .storageAccount(parsedObject.getString("netdisk_name"))
+                        .avatarUrl(parsedObject.getString("avatar_url"))
+                        .build();
+            }
             return null;
         }
     }
@@ -100,29 +110,35 @@ public class TenantService {
      * to delete token for tenant id.
      *
      * @param id tenant id
-     * @return status logout status
      */
-    public Long reToken(String id) {
-        // System.out.println(redis.get(id));
-        return redis.delete(id);
+    public void removeToken(String id) {
+        redis.delete(id);
     }
 
     /**
+     * 事前、顧客情報(Customer)に登録するお客様情報を利用し、テナント情報する。
      *
+     * @param registerInfo テナント情報
+     * @return 登録結果
      */
-    public boolean register(RegisterIn input) {
+    public boolean register(RegisterInfo registerInfo) {
 
-        // auth_master から
-        Optional<?> result = authMasterRepo.findById(input.getPhoneNumber());
+        // 事前、顧客情報(Customer)に登録するお客様情報がなければ、Sign Upできません。
+        Optional<?> result = customerRepo.findById(registerInfo.getPhoneNumber());
         if (result.isPresent()) {
-            Tenant tenant = Tenant.builder().tenantId(input.getTenantId()).account(input.getAccount())
-                .tel(input.getPhoneNumber()).authority(2).storageAccount("").avatarUrl("").build();
-
-            Tenant tenant1 = mongoTemplate.save(tenant);
-            if (tenant1 != null) {
-                return true;
-            }
-            return false;
+            Tenant tenant = Tenant.builder()
+                    .tenantId(registerInfo.getTenantId())
+                    .account(registerInfo.getAccount())
+                    .tel(registerInfo.getPhoneNumber())
+                    .authority(2)
+                    .storageAccount("")
+                    .avatarUrl("")
+                    .build();
+            // テナント情報保存
+            tenantRepo.save(tenant);
+            // キャッシュに保存する
+            redis.set(registerInfo.getTenantId(), registerInfo.getToken(), 1, TimeUnit.DAYS);
+            return true;
         }
         return false;
     }
